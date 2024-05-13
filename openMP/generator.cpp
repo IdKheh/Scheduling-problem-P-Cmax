@@ -3,8 +3,8 @@
 #include <cstdlib>
 #include <algorithm>
 
-#define MAXMachine 2
-#define MAXProcess 3
+#define MAXMachine 50
+#define MAXProcess 1000
 #define MAXTime 100
 #define MINMachines 2
 #define MIN 1

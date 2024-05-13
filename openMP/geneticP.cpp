@@ -11,7 +11,7 @@
 #define vector2D std::vector<std::vector<int>>
 #define vector1D std::vector<int>
 
-void check(vector1D &child, vector2D broken, vector2D t,int n, int m){
+void checkP(vector1D &child, vector2D broken, vector2D t,int n, int m){
     vector1D brokenMachines(m,0);
     vector1D times(m,0);
     vector1D end(n,0);
@@ -44,15 +44,14 @@ void check(vector1D &child, vector2D broken, vector2D t,int n, int m){
     }
 }
 
-vector2D init(vector2D t,vector1D topResult,vector2D broken){
+vector2D initP(vector2D t,vector1D topResult,vector2D broken){
     int n = t[0][0], m = t[0][1];
 
     vector2D popTask;
-    vector1D child1(n,0);
-    vector1D child2(n,0);
-    vector1D brokenMachines(m,0);
-    vector1D times(m,0);
+    #pragma omp parallel for
     for(int x=0;x<2*MAXPopulation;x++){
+        vector1D child1(n,0);
+        vector1D child2(n,0);
         int changeProcess1 = std::rand()%(n);
         int changeProcess2 = std::rand()%(n);
         int changeMachine1 = std::rand()%m+1;
@@ -64,26 +63,27 @@ vector2D init(vector2D t,vector1D topResult,vector2D broken){
         child2 = topResult;
         child2[changeProcess2] = changeMachine2;
 
-        check(child1,broken,t,n,m);
-        check(child2,broken,t,n,m);
-        popTask.push_back(child1);
-        popTask.push_back(child2);
+        checkP(child1,broken,t,n,m);
+        checkP(child2,broken,t,n,m);
+        #pragma omp critical
+        {
+            popTask.push_back(child1);
+            popTask.push_back(child2);
+        }
     }
     popTask.push_back(topResult);
-    child1.clear();
-    child2.clear();
     return popTask;
 }
 
-vector2D crossbreeding(vector2D t,vector2D topResult,vector2D broken){
+vector2D crossbreedingP(vector2D t,vector2D topResult,vector2D broken){
     int n = t[0][0], m = t[0][1];
 
     vector2D popTask;
-    vector1D child1(n+1,0);
-    vector1D child2(n+1,0);
 
-
+    #pragma omp parallel for
     for(int x=0;x<MAXPopulation;x++){
+        vector1D child1(n+1,0);
+        vector1D child2(n+1,0);
         int setTask1 = std::rand()%MAXCandidats;
         int setTask2 = std::rand()%MAXCandidats;
         int joinVectors = std::rand()%(n-MINVectorSize);
@@ -105,43 +105,46 @@ vector2D crossbreeding(vector2D t,vector2D topResult,vector2D broken){
         child1[changeProcess1] = changeMachine1;
         child2[changeProcess2] = changeMachine2;
 
-        check(child1,broken,t,n,m);
-        check(child2,broken,t,n,m);
+        checkP(child1,broken,t,n,m);
+        checkP(child2,broken,t,n,m);
 
-        popTask.push_back(child1);
-        popTask.push_back(child2);
-        popTask.push_back(topResult[setTask1]);
-        popTask.push_back(topResult[setTask2]);
+        #pragma omp critical
+        {
+            popTask.push_back(child1);
+            popTask.push_back(child2);
+            popTask.push_back(topResult[setTask1]);
+            popTask.push_back(topResult[setTask2]);
+        }
     }
-    child1.clear();
-    child2.clear();
     return popTask;
 }
 
-void mutation(int n, int m, vector2D &tasks,vector2D broken, vector2D t)
+void mutationP(int n, int m, vector2D &tasks,vector2D broken, vector2D t)
 {
     int sizePop = tasks.size();
     int x=std::rand()%sizePop; //losujemy liczbe permutacji do zmutowania
 
+    #pragma omp parallel for
     for(int i=0;i<x;i++){
-        int taskSet = std::rand()%sizePop;
+        int taskSet = std::rand()%sizePop;  //ryzyko wylosowania dwa razy tego samego wektora
         int indexTask = std::rand()%n;
         int indexMachine = std::rand()%m+1;
 
         tasks[taskSet][indexTask]=indexMachine;
 
-        check(tasks[taskSet],broken,t,n,m);       
+        checkP(tasks[taskSet],broken,t,n,m);       
     }
 }
 
-vector2D population(vector2D t, vector2D &tasks){
+vector2D populationP(vector2D t, vector2D &tasks){
     int sizePop = tasks.size(), n=t[0][0], m=t[0][1];
-    vector1D machines(m,0); // wybor cmax
     vector2D result(10, vector1D(n+1,0));
     vector1D BrokenMachines(t[0][1],0);
     vector1D thebest(TheBestCandidats,-1);
-      
+    
+    #pragma omp parallel for
     for(int i=0;i<sizePop;i++){// obliczam cmax
+        vector1D machines(m,0);
         for(int j=0;j<m;j++)
             machines[j]=0;
 
@@ -179,46 +182,19 @@ vector2D population(vector2D t, vector2D &tasks){
     return result;
 }
 
-
-vector1D geneticAlgorithmParalell(vector2D t,vector2D broken,vector1D greedyResult, int nuberOfLoops){
-    vector1D result(t[0][0]+1,0);
-    vector2D popTask;
-    result = greedyResult;
-
-    for(int i=0;i<nuberOfLoops;i++){
-        #pragma omp parallel
-        {
-            if(i==0) popTask = init(t, greedyResult, broken); // O(m+n) (m=4000)
-            else popTask = crossbreeding(t,popTask,broken); // O(m+n^2)
-            #pragma omp barrier
-            mutation(t[0][0], t[0][1], popTask, broken, t); // O(x), x - ilosc mutacji
-            #pragma omp barrier
-            
-            #pragma omp single
-            {
-                popTask = population(t, popTask); // wybieramy 5 najlepszych i 5 losowych O(n^2)
-
-                if (result[t[0][0]] > popTask[0][t[0][0]]) {
-                    result = popTask[0];
-                }
-            }
-        }
-    }
-    return result;
-}
-vector1D geneticAlgorithmSequency(vector2D t,vector2D broken,vector1D greedyResult, int n){// calosc O(n^2*i) n = 30 - populacja, i - ilosc iteracji
+vector1D geneticAlgorithmP(vector2D t,vector2D broken,vector1D greedyResult, int n){// calosc O(n^2*i) n = 30 - populacja, i - ilosc iteracji
     vector1D result(t[0][0]+1,0);
     vector2D popTask;
     result = greedyResult;
     for(int i=0;i<n;i++){
 
-        if(i==0) popTask = init(t,greedyResult,broken); // generowanie populacji = O(m+n) (m=1000)
-        else popTask = crossbreeding(t,popTask,broken); // O(m+n^2)
+        if(i==0) popTask = initP(t,greedyResult,broken); // generowanie populacji = O(m+n) (m=1000)
+        else popTask = crossbreedingP(t,popTask,broken); // O(m+n^2)
 
-        mutation(t[0][0],t[0][1],popTask,broken,t); // O(x), x - ilosc mutacji
-        popTask=population(t,popTask); // wybieramy 5 najlepszych i 5 losowych O(n^2)
+        mutationP(t[0][0],t[0][1],popTask,broken,t); // O(x), x - ilosc mutacji
+        popTask=populationP(t,popTask); // wybieramy 5 najlepszych i 5 losowych O(n^2)
 
-        if(result[t[0][0]>popTask[0][n]]){
+        if(result[t[0][0]>popTask[0][t[0][0]]]){
             result = popTask[0];
         }
     }
