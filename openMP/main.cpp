@@ -1,7 +1,10 @@
 #include <iostream>
 #include <vector>
+#include <chrono>
 #include "polaczenie.hpp"
 
+//zadania będą duplikowane jeśli maszyna padnie
+//możliwe będzie w sumie również, że niektóre zadania będą mogły wykonywać się krócej na niektórych maszynach
 
 int main(int argc, char const *argv[])
 {
@@ -37,10 +40,23 @@ int main(int argc, char const *argv[])
     std::cout<<"Greedy Broken Cmax: "<<resultGreedyBroken[t[0][0]]<<std::endl;
     wypisz_male(resultGreedyBroken);
     
-    std::cout<<"GENETIC ALGORITHM\n";
-    std::vector<int> resultGenetic = geneticAlgorithm(t,broken,resultGreedyBroken, 100);
-    std::cout<<"Genetic Cmax: "<<resultGenetic[t[0][0]]<<std::endl;
-    wypisz_male(resultGenetic);
+    std::cout<<"GENETIC ALGORITHM Paralell\n";
+    auto start1 = std::chrono::steady_clock::now();
+    std::vector<int> resultGeneticP = geneticAlgorithmParalell(t,broken,resultGreedyBroken, 100);
+    auto end1 = std::chrono::steady_clock::now();
+    std::chrono::duration<double> time1 = end1 - start1;
+
+    
+    std::cout<<"Genetic Cmax: "<<resultGeneticP[t[0][0]]<<" time: "<<time1.count()<<" s"<<std::endl;
+    wypisz_male(resultGeneticP);
+
+    std::cout<<"GENETIC ALGORITHM Sequency\n";
+    auto start2 = std::chrono::steady_clock::now();
+    std::vector<int> resultGeneticS = geneticAlgorithmSequency(t,broken,resultGreedyBroken, 100);
+    auto end2 = std::chrono::steady_clock::now();
+    std::chrono::duration<double> time2 = end2 - start2;
+    std::cout<<"Genetic Cmax: "<<resultGeneticS[t[0][0]]<<" time: "<<time2.count()<<" s"<<std::endl;
+    wypisz_male(resultGeneticS);
 
     return 0;
 }
