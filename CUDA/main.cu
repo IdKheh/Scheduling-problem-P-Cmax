@@ -1,48 +1,65 @@
 #include <iostream>
 #include <vector>
-#include "polaczenie.hpp"
+#include <chrono>
+#define vector2D std::vector<std::vector<int>>
+#define vector1D std::vector<int>
+#define MAXNumber 10;
+#define MINNumber 0;
 
-//zadania będą duplikowane jeśli maszyna padnie
-//możliwe będzie w sumie również, że niektóre zadania będą mogły wykonywać się krócej na niektórych maszynach
+void display(vector2D t){
+    int n = t.size();
+    int m = t[0].size();
 
-int main(int argc, char const *argv[])
-{
-    srand(time(NULL));
-    std::cout<<"GENERATE DATA\n";
-    //std::vector<std::vector<int>> t= generator();
+    for(int i=0;i<n;i++){
+        for(int j=0;j<m;j++)
+            std::cout<<t[i][j]<<" ";
+        std::cout<<std::endl;
+    }
+}
 
-    std::vector<std::vector<int>> t(5+1,std::vector<int>(2,0));
-    std::vector<std::vector<int>> broken(2,std::vector<int>(1,0));
+vector2D generator(int n,int m){
+    vector2D t(n,vector1D(m,0));
+    for(int i=0;i<n;i++){
+        for(int j=0;j<m;j++){
+            t[i][j]=std::rand()%MAXNumber + MINNumber;
+        }
+    }
+    return t;
+}
 
-    t[0][0]=5; t[0][1]=3;
-    t[1][0]=1; t[1][1]=10;
-    t[2][0]=2; t[2][1]=12;
-    t[3][0]=3; t[3][1]=15;
-    t[4][0]=4; t[4][1]=25;
-    t[5][0]=5; t[5][1]=13;
+vector2D multiplay(vector2D A,vector2D B){
+    int n = A.size();
+    int p = A[0].size();
+    int m = B[0].size();
 
-    broken[0][0]=2; broken[1][0] = 13;
-    
-    wypisz(t);
+    vector2D t(n,vector1D(m,0));
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j < m; ++j) {
+            for (int k = 0; k < p; ++k) {
+                t[i][j] += A[i][k] * B[k][j];
+            }
+        }
+    }
+    return t;
+}
 
-    std::cout<<"GREEDY ALGORITHM\n";
-    std::vector<int> resultGreedy = greedy(t);
-    std::cout<<"Greedy Cmax: "<<resultGreedy[t[0][0]]<<std::endl;
-    wypisz_male(resultGreedy);
+int main(){
+    int n=3, m=1;
+    std::cout<<"GENERATE DATA\n\n";
 
-    //std::vector<std::vector<int>> broken = brokenGenerator(t[0][1],resultGreedy[t[0][0]]);
+    vector2D A=generator(n,m);
+    vector2D B=generator(m,n);
+    display(A);
+    std::cout<<"----------------\n";
+    display(B);
 
-    wypisz(broken);
+    auto start1 = std::chrono::steady_clock::now();
+    vector2D C = multiplay(A,B);
+    auto end1 = std::chrono::steady_clock::now();
+    std::chrono::duration<double> time1 = end1 - start1;
 
-    std::cout<<"Greedy Broken ALGORITHM\n";
-    std::vector<int> resultGreedyBroken = greedyBroken(t,broken);
-    std::cout<<"Greedy Broken Cmax: "<<resultGreedyBroken[t[0][0]]<<std::endl;
-    wypisz_male(resultGreedyBroken);
-    
-    std::cout<<"GENETIC ALGORITHM\n";
-    std::vector<int> resultGenetic = geneticAlgorithm(t,broken,resultGreedyBroken, 100);
-    std::cout<<"Genetic Cmax: "<<resultGenetic[t[0][0]]<<std::endl;
-    wypisz_male(resultGenetic);
+    std::cout<<"\nRESULT time: "<<time1.count()*1000<<" ms\n----------------\n";
+    display(C);
 
     return 0;
 }
