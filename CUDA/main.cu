@@ -51,10 +51,13 @@ void multiplyCUDA(vector2D &A, vector2D &B,vector2D &C, int n) {
     translate(A,arrayA,n); // przepisanie danych z wektora wektów to pojedyńczego wektora
     translate(B,arrayB,n);
     translate(C,arrayC,n);
+    display(arrayA);
+    display(arrayB);
+    display(arrayC);
     
     size_t sizeT = size * sizeof(int); 
     int *d_A,*d_B,*d_C;
-    int *res = (int*)malloc(size); 
+    int *res = (int*)malloc(sizeT);
 
     cudaMalloc(&d_A, sizeT);       //alokowanie pamięci na kacie graficznej
     cudaMalloc(&d_B, sizeT);
@@ -117,7 +120,7 @@ vector2D multiply(vector2D A,vector2D B){
 }
 
 int main(){
-    int n=3;
+    int n=22;
     std::cout<<"GENERATE DATA\n\n";
 
     vector2D A=generator(n);
@@ -134,7 +137,6 @@ int main(){
 
     std::cout<<"\nRESULT SEQUENCY time: "<<time1.count()*1000<<" ms\n----------------\n";
     display(C1);
-    std::cout<<"1"<<std::endl;
 
     auto start2 = std::chrono::steady_clock::now();
     multiplyCUDA(A,B,C2,n);
@@ -143,6 +145,11 @@ int main(){
 
     std::cout<<"\nRESULT CUDA time: "<<time2.count()*1000<<" ms\n----------------\n";
     display(C2);
+
+    A.clear();
+    B.clear();
+    C1.clear();
+    C2.clear();
 
     return 0;
 }
