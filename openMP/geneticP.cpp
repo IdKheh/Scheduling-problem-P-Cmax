@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <iterator>
 #include "polaczenie.hpp"
-#define MAXPopulation 1000 // how many population we create
+#define MAXStartPopulation 1000 // how many population we create
 #define MINVectorSize 2
 #define TheBestCandidats 5
 #define MAXCandidats 10
@@ -44,12 +44,12 @@ void checkP(vector1D &child, vector2D broken, vector2D t,int n, int m){
     }
 }
 
-vector2D initP(vector2D t,vector1D topResult,vector2D broken){
+vector2D initP(vector2D t,vector1D topResult,vector2D broken,int pop){
     int n = t[0][0], m = t[0][1];
 
     vector2D popTask;
     #pragma omp parallel for
-    for(int x=0;x<2*MAXPopulation;x++){
+    for(int x=0;x<pop;x++){
         vector1D child1(n,0);
         vector1D child2(n,0);
         int changeProcess1 = std::rand()%(n);
@@ -75,13 +75,12 @@ vector2D initP(vector2D t,vector1D topResult,vector2D broken){
     return popTask;
 }
 
-vector2D crossbreedingP(vector2D t,vector2D topResult,vector2D broken){
+vector2D crossbreedingP(vector2D t,vector2D topResult,vector2D broken, int pop){
     int n = t[0][0], m = t[0][1];
-
     vector2D popTask;
 
     #pragma omp parallel for
-    for(int x=0;x<MAXPopulation;x++){
+    for(int x=0;x<pop;x++){
         vector1D child1(n+1,0);
         vector1D child2(n+1,0);
         int setTask1 = std::rand()%MAXCandidats;
@@ -129,9 +128,10 @@ void mutationP(int n, int m, vector2D &tasks,vector2D broken, vector2D t)
         int taskSet = std::rand()%sizePop;  //ryzyko wylosowania dwa razy tego samego wektora
         int indexTask = std::rand()%n;
         int indexMachine = std::rand()%m+1;
-
-        tasks[taskSet][indexTask]=indexMachine;
-
+        #pragma omp critical
+        {
+            tasks[taskSet][indexTask]=indexMachine;
+        }
         checkP(tasks[taskSet],broken,t,n,m);       
     }
 }
@@ -182,14 +182,14 @@ vector2D populationP(vector2D t, vector2D &tasks){
     return result;
 }
 
-vector1D geneticAlgorithmP(vector2D t,vector2D broken,vector1D greedyResult, int n){// calosc O(n^2*i) n = 30 - populacja, i - ilosc iteracji
+vector1D geneticAlgorithmP(vector2D t,vector2D broken,vector1D greedyResult, int n, int pop){// calosc O(n^2*i) n = 30 - populacja, i - ilosc iteracji
     vector1D result(t[0][0]+1,0);
     vector2D popTask;
     result = greedyResult;
     for(int i=0;i<n;i++){
 
-        if(i==0) popTask = initP(t,greedyResult,broken); // generowanie populacji = O(m+n) (m=1000)
-        else popTask = crossbreedingP(t,popTask,broken); // O(m+n^2)
+        if(i==0) popTask = initP(t,greedyResult,broken,pop); // generowanie populacji = O(m+n) (m=1000)
+        else popTask = crossbreedingP(t,popTask,broken,pop); // O(m+n^2)
 
         mutationP(t[0][0],t[0][1],popTask,broken,t); // O(x), x - ilosc mutacji
         popTask=populationP(t,popTask); // wybieramy 5 najlepszych i 5 losowych O(n^2)

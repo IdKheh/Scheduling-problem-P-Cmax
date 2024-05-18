@@ -43,7 +43,7 @@ void check(vector1D &child, vector2D broken, vector2D t,int n, int m){
     }
 }
 
-vector2D init(vector2D t,vector1D topResult,vector2D broken){
+vector2D init(vector2D t,vector1D topResult,vector2D broken,int pop){
     int n = t[0][0], m = t[0][1];
 
     vector2D popTask;
@@ -51,7 +51,7 @@ vector2D init(vector2D t,vector1D topResult,vector2D broken){
     vector1D child2(n,0);
     vector1D brokenMachines(m,0);
     vector1D times(m,0);
-    for(int x=0;x<10;x++){
+    for(int x=0;x<pop;x++){
         int changeProcess1 = std::rand()%(n);
         int changeProcess2 = std::rand()%(n);
         int changeMachine1 = std::rand()%m+1;
@@ -74,7 +74,7 @@ vector2D init(vector2D t,vector1D topResult,vector2D broken){
     return popTask;
 }
 
-vector2D crossbreeding(vector2D t,vector2D topResult,vector2D broken){
+vector2D crossbreeding(vector2D t,vector2D topResult,vector2D broken,int pop){
     int n = t[0][0], m = t[0][1];
 
     vector2D popTask;
@@ -82,7 +82,7 @@ vector2D crossbreeding(vector2D t,vector2D topResult,vector2D broken){
     vector1D child2(n+1,0);
 
 
-    for(int x=0;x<MAXPopulation;x++){
+    for(int x=0;x<pop;x++){
         int setTask1 = std::rand()%MAXCandidats;
         int setTask2 = std::rand()%MAXCandidats;
         int joinVectors = std::rand()%(n-MINVectorSize);
@@ -178,14 +178,14 @@ vector2D population(vector2D t, vector2D &tasks){
     return result;
 }
 
-vector1D geneticAlgorithmS(vector2D t,vector2D broken,vector1D greedyResult, int n){// calosc O(n^2*i) n = 30 - populacja, i - ilosc iteracji
+vector1D geneticAlgorithmS(vector2D t,vector2D broken,vector1D greedyResult, int n,int pop){// calosc O(n^2*i) n = 30 - populacja, i - ilosc iteracji
     vector1D result(t[0][0]+1,0);
     vector2D popTask;
     result = greedyResult;
     for(int i=0;i<n;i++){
 
-        if(i==0) popTask = init(t,greedyResult,broken); // generowanie populacji = O(m+n) (m=1000)
-        else popTask = crossbreeding(t,popTask,broken); // O(m+n^2)
+        if(i==0) popTask = init(t,greedyResult,broken,pop); // generowanie populacji = O(m+n) (m=1000)
+        else popTask = crossbreeding(t,popTask,broken,pop); // O(m+n^2)
 
         mutation(t[0][0],t[0][1],popTask,broken,t); // O(x), x - ilosc mutacji
         popTask=population(t,popTask); // wybieramy 5 najlepszych i 5 losowych O(n^2)

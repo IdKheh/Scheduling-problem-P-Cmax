@@ -105,13 +105,11 @@ vector2D generator(int n){
 
 vector2D multiply(vector2D A,vector2D B){
     int n = A.size();
-    int p = A[0].size();
-    int m = B[0].size();
 
     vector2D t(n,vector1D(m,0));
-    for (int i = 0; i < n; ++i) {
-        for (int j = 0; j < m; ++j) {
-            for (int k = 0; k < p; ++k) {
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            for (int k = 0; k < n; k++) {
                 t[i][j] += A[i][k] * B[k][j];
             }
         }
