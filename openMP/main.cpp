@@ -9,10 +9,10 @@
 
 int main(int argc, char const *argv[])
 {
-    int n=100, m=20, x=5,l=100,pop=1000;
+    int n=100, m=20, x=5,l=40,pop=2000;
     double times[10][10][11];
     for(int i=0;i<1;i++){
-        for(int j=0;j<1;j++){
+        for(int j=0;j<10;j++){
             srand(time(NULL));
             std::cout<<"GENERATE DATA\n";
             std::vector<std::vector<int>> t= generator(n,m);
@@ -64,11 +64,9 @@ int main(int argc, char const *argv[])
             times[i][j][9]=resultGeneticP[t[0][0]];
             times[i][j][10]=resultGeneticS[t[0][0]];
         }
-        n+=100;
-        m+=20;
-        x+=5;
-        l+=10;
-        pop+=500;
+        l+=2;
+        pop+=100;
+        std::cout<<"i: "<<i<<std::endl;
     }
      // Save the times array to a file
     std::ofstream outFile("times.txt");

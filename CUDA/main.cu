@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <chrono>
+#include <fstream>
 #define vector2D std::vector<std::vector<int>>
 #define vector1D std::vector<int>
 #define MAXNumber 10
@@ -51,9 +52,6 @@ void multiplyCUDA(vector2D &A, vector2D &B,vector2D &C, int n) {
     translate(A,arrayA,n); // przepisanie danych z wektora wektów to pojedyńczego wektora
     translate(B,arrayB,n);
     translate(C,arrayC,n);
-    display(arrayA);
-    display(arrayB);
-    display(arrayC);
     
     size_t sizeT = size * sizeof(int); 
     int *d_A,*d_B,*d_C;
@@ -106,7 +104,7 @@ vector2D generator(int n){
 vector2D multiply(vector2D A,vector2D B){
     int n = A.size();
 
-    vector2D t(n,vector1D(m,0));
+    vector2D t(n,vector1D(n,0));
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < n; j++) {
             for (int k = 0; k < n; k++) {
@@ -118,36 +116,61 @@ vector2D multiply(vector2D A,vector2D B){
 }
 
 int main(){
-    int n=22;
+    int n=20;
     std::cout<<"GENERATE DATA\n\n";
+    double times[10][10][3];
 
-    vector2D A=generator(n);
-    vector2D B=generator(n);
-    vector2D C2(n,vector1D(n,0));
-    display(A);
-    std::cout<<"----------------\n";
-    display(B);
+    for(int i=0;i<5;i++){
+        for(int j=0;j<10;j++){
+            std::cout<<"GENERATE DATA\n";
+            vector2D A=generator(n);
+            vector2D B=generator(n);
+            vector2D C2(n,vector1D(n,0));
+            //display(A);
+            std::cout<<"----------------\n";
+            //display(B);
 
-    auto start1 = std::chrono::steady_clock::now();
-    vector2D C1 = multiply(A,B);
-    auto end1 = std::chrono::steady_clock::now();
-    std::chrono::duration<double> time1 = end1 - start1;
+            auto start1 = std::chrono::steady_clock::now();
+            vector2D C1 = multiply(A,B);
+            auto end1 = std::chrono::steady_clock::now();
+            std::chrono::duration<double> time1 = end1 - start1;
 
-    std::cout<<"\nRESULT SEQUENCY time: "<<time1.count()*1000<<" ms\n----------------\n";
-    display(C1);
+            std::cout<<"\nRESULT SEQUENCY time: "<<time1.count()*1000<<" ms\n----------------\n";
+            //display(C1);
 
-    auto start2 = std::chrono::steady_clock::now();
-    multiplyCUDA(A,B,C2,n);
-    auto end2 = std::chrono::steady_clock::now();
-    std::chrono::duration<double> time2 = end2 - start2;
+            auto start2 = std::chrono::steady_clock::now();
+            multiplyCUDA(A,B,C2,n);
+            auto end2 = std::chrono::steady_clock::now();
+            std::chrono::duration<double> time2 = end2 - start2;
 
-    std::cout<<"\nRESULT CUDA time: "<<time2.count()*1000<<" ms\n----------------\n";
-    display(C2);
+            std::cout<<"\nRESULT CUDA time: "<<time2.count()*1000<<" ms\n----------------\n";
+            //display(C2);
 
-    A.clear();
-    B.clear();
-    C1.clear();
-    C2.clear();
+            times[i][j][0]=n;
+            times[i][j][1]=time1.count();
+            times[i][j][2]=time2.count();
 
+            A.clear();
+            B.clear();
+            C1.clear();
+            C2.clear();
+        }
+        std::cout<<n<<std::endl;
+        n+=100;
+    }
+    std::ofstream outFile("timesCUDA.txt");
+    if (outFile.is_open()) {
+        for (int i = 0; i < 10; ++i) {
+            for (int j = 0; j < 10; ++j) {
+                for (int k = 0; k < 3; ++k) {
+                    outFile << times[i][j][k] << " ";
+                }
+                outFile << std::endl;
+            }
+        }
+        outFile.close();
+    } else {
+        std::cerr << "Unable to open file for writing\n";
+    }
     return 0;
 }

@@ -11,35 +11,39 @@
 #define vector2D std::vector<std::vector<int>>
 #define vector1D std::vector<int>
 
-void checkP(vector1D &child, vector2D broken, vector2D t,int n, int m){
-    vector1D brokenMachines(m,0);
-    vector1D times(m,0);
-    vector1D end(n,0);
+#include <iostream>
+#include <omp.h>
+#include <vector>
+#include <algorithm>
+#include <iterator>
+#include "polaczenie.hpp"
+#define MAXStartPopulation 1000 // how many population we create
+#define MINVectorSize 2
+#define TheBestCandidats 5
+#define MAXCandidats 10
+#define vector2D std::vector<std::vector<int>>
+#define vector1D std::vector<int>
 
+void checkP(vector1D &child, vector2D broken, vector2D t,int n, int m){ // popraw tutaj coś
     for(int i=0;i<n;i++){
-        auto index = std::find(broken[0].begin(),broken[0].end(),child[i]-1);
-
-        if((brokenMachines[child[i]-1]) || 
-        (index != broken[0].end() && times[child[i]-1]+t[i+1][1]==broken[1][index - broken[0].begin()])){
-
-        }
-        else {
-            times[child[i]-1]+=t[i+1][1];
-            end[i]++;
-        }
-    }
-
-    for(int i=0;i<n;i++){
-        if(!end[i]){
-            int index=0;
+        vector1D times(m,0);
+        int machine = child[i]-1;
+        //    int time = t[i+1][1];
+        auto index = std::find(broken[0].begin(),broken[0].end(),machine);
+        if((index != broken[0].end() && times[machine]+t[i+1][1]>=broken[1][index - broken[0].begin()])){
+            int newIndex=0;
             for(int j=0;j<m;j++){
-                if(times[index]+t[i+1][1]>times[j]+t[i+1][1]) index = j;
-
+                if(times[newIndex]+t[i+1][1]>times[j]+t[i+1][1]) {
+                    newIndex = j;
+                }
                 if(m-1 == j){
-                times[index]+=t[i][1];
-                child[i]=index+1;
+                    times[newIndex]+=t[i+1][1];
+                    child[i]=newIndex+1;
                 }
             }
+        }
+        else {
+            times[machine]+=t[i+1][1];
         }
     }
 }
@@ -201,9 +205,3 @@ vector1D geneticAlgorithmP(vector2D t,vector2D broken,vector1D greedyResult, int
 
     return result;
 }
-
-// g++ main.cpp algorytm.cpp generator.cpp genetic.cpp functions.cpp -o main
-
-//gcc -o hello -fopenmp hello.c
-
-//g++ -o main -fopenmp main.cpp algorytm.cpp generator.cpp genetic.cpp functions.cpp
